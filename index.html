@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fitness Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d0d0d; color: #f0e6ff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding: 16px; }
+  h1 { text-align: center; font-size: 1.5rem; color: #c084fc; margin-bottom: 4px; letter-spacing: 1px; }
+  .date { text-align: center; font-size: 0.85rem; color: #9ca3af; margin-bottom: 18px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 18px; justify-content: center; }
+  .tab { flex: 1; max-width: 140px; padding: 8px; border-radius: 10px; border: 1.5px solid #7c3aed; background: transparent; color: #c084fc; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .tab.active { background: #7c3aed; color: #fff; font-weight: 600; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: #1a1a2e; border: 1px solid #7c3aed44; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 1rem; color: #c084fc; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  label { font-size: 0.82rem; color: #d8b4fe; display: block; margin-bottom: 4px; margin-top: 10px; }
+  input, textarea, select { width: 100%; background: #0d0d1a; border: 1px solid #7c3aed66; border-radius: 8px; color: #f0e6ff; padding: 8px 10px; font-size: 0.9rem; outline: none; }
+  input:focus, textarea:focus { border-color: #c084fc; }
+  textarea { resize: vertical; min-height: 60px; }
+  .protein-bar-wrap { background: #0d0d1a; border-radius: 20px; height: 14px; margin: 8px 0 4px; overflow: hidden; }
+  .protein-bar { height: 100%; border-radius: 20px; background: linear-gradient(90deg, #7c3aed, #c084fc); transition: width 0.4s; }
+  .protein-pct { font-size: 0.78rem; color: #9ca3af; text-align: right; }
+  .row { display: flex; gap: 8px; }
+  .row input { flex: 1; }
+  .add-btn { background: #7c3aed22; border: 1px solid #7c3aed; color: #c084fc; border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; cursor: pointer; margin-top: 8px; transition: background 0.2s; }
+  .add-btn:hover { background: #7c3aed55; }
+  .log-entry { background: #0d0d1a; border-radius: 8px; padding: 8px 10px; margin-top: 6px; font-size: 0.82rem; color: #d8b4fe; display: flex; justify-content: space-between; align-items: center; }
+  .log-entry span { color: #9ca3af; font-size: 0.75rem; }
+  .del-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1rem; padding: 0 4px; }
+  .save-btn { width: 100%; background: linear-gradient(135deg, #7c3aed, #9333ea); border: none; border-radius: 10px; color: #fff; font-size: 0.95rem; font-weight: 700; padding: 12px; cursor: pointer; margin-top: 10px; letter-spacing: 0.5px; transition: opacity 0.2s; }
+  .save-btn:hover { opacity: 0.88; }
+  .recovery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .rec-item { background: #0d0d1a; border-radius: 10px; padding: 10px; text-align: center; border: 1.5px solid #7c3aed44; cursor: pointer; transition: all 0.2s; }
+  .rec-item.selected { border-color: #c084fc; background: #7c3aed22; }
+  .rec-item .emoji { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+  .rec-item .lbl { font-size: 0.75rem; color: #d8b4fe; }
+  .sleep-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .sleep-row input[type=range] { flex: 1; accent-color: #c084fc; }
+  .sleep-val { color: #c084fc; font-weight: 700; min-width: 36px; font-size: 0.95rem; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7c3aed; color: #fff; padding: 10px 22px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 99; }
+  .toast.show { opacity: 1; }
+  .history-entry { background: #0d0d1a; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: 0.82rem; }
+  .history-entry .h-date { color: #c084fc; font-weight: 700; margin-bottom: 4px; }
+  .history-entry .h-row { display: flex; justify-content: space-between; color: #d8b4fe; padding: 2px 0; }
+  .empty { text-align: center; color: #6b7280; font-size: 0.85rem; padding: 20px 0; }
+  .overload-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 6px; }
+  .overload-table th { color: #c084fc; text-align: left; padding: 4px 6px; border-bottom: 1px solid #7c3aed44; }
+  .overload-table td { padding: 5px 6px; border-bottom: 1px solid #7c3aed22; color: #d8b4fe; }
+  .overload-table tr:last-child td { border-bottom: none; }
+  .pr-badge { background: #7c3aed; color: #fff; font-size: 0.65rem; border-radius: 4px; padding: 1px 5px; margin-left: 4px; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<h1>👑 Fitness Tracker</h1>
+<div class="date" id="dateDisplay"></div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('protein')">🥩 Protein</div>
+  <div class="tab" onclick="switchTab('overload')">📈 Overload</div>
+  <div class="tab" onclick="switchTab('recovery')">💜 Recovery</div>
+</div>
+
+<!-- PROTEIN TAB -->
+<div class="section active" id="sec-protein">
+  <div class="card">
+    <h2>🥩 Daily Protein Goal</h2>
+    <label>Daily Goal (g)</label>
+    <input type="number" id="proteinGoal" value="100" min="50" max="200" oninput="updateBar()"/>
+    <div style="margin-top:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:#9ca3af;margin-bottom:2px;">
+        <span>Progress</span><span id="proteinTotal">0g / 100g</span>
+      </div>
+      <div class="protein-bar-wrap"><div class="protein-bar" id="proteinBar" style="width:0%"></div></div>
+      <div class="protein-pct" id="proteinPct">0%</div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>➕ Log a Meal</h2>
+    <label>Food / Meal</label>
+    <input type="text" id="mealName" placeholder="e.g. Protein shake, chicken breast..."/>
+    <label>Protein (g)</label>
+    <input type="number" id="mealProtein" placeholder="e.g. 30" min="0"/>
+    <button class="add-btn" onclick="addMeal()">+ Add Meal</button>
+    <div id="mealList" style="margin-top:10px;"></div>
+  </div>
+  <div class="card">
+    <h2>📋 Today's Notes</h2>
+    <textarea id="nutritionNotes" placeholder="Water intake, how you felt, supplements taken..."></textarea>
+  </div>
+  <button class="save-btn" onclick="saveProtein()">💾 Save Today's Protein Log</button>
+</div>
+
+<!-- OVERLOAD TAB -->
+<div class="section" id="sec-overload">
+  <div class="card">
+    <h2>📈 Log Exercise</h2>
+    <label>Exercise</label>
+    <input type="text" id="exName" placeholder="e.g. Hip Thrust, Romanian Deadlift..."/>
+    <div class="row" style="margin-top:0;">
+      <div style="flex:1"><label>Sets</label><input type="number" id="exSets" placeholder="4" min="1"/></div>
+      <div style="flex:1"><label>Reps</label><input type="number" id="exReps" placeholder="10" min="1"/></div>
+      <div style="flex:1"><label>Weight (lbs)</label><input type="number" id="exWeight" placeholder="95" min="0"/></div>
+    </div>
+    <button class="add-btn" onclick="addExercise()">+ Log Exercise</button>
+    <div id="exerciseList" style="margin-top:10px;"></div>
+  </div>
+  <div class="card">
+    <h2>🏆 PR History</h2>
+    <div id="prHistory"></div>
+  </div>
+  <button class="save-btn" onclick="saveOverload()">💾 Save Today's Workout Log</button>
+</div>
+
+<!-- RECOVERY TAB -->
+<div class="section" id="sec-recovery">
+  <div class="card">
+    <h2>😴 Sleep</h2>
+    <div class="sleep-row">
+      <input type="range" id="sleepHours" min="4" max="10" step="0.5" value="7" oninput="updateSleep()"/>
+      <span class="sleep-val" id="sleepVal">7h</span>
+    </div>
+    <div style="font-size:0.78rem;color:#9ca3af;margin-top:4px;" id="sleepMsg">Good recovery zone 💜</div>
+  </div>
+  <div class="card">
+    <h2>🌡️ How's Your Body?</h2>
+    <div class="recovery-grid">
+      <div class="rec-item" id="feel-great" onclick="selectFeel('great')"><span class="emoji">🔥</span><span class="lbl">Ready to crush it</span></div>
+      <div class="rec-item" id="feel-good" onclick="selectFeel('good')"><span class="emoji">💪</span><span class="lbl">Feeling good</span></div>
+      <div class="rec-item" id="feel-sore" onclick="selectFeel('sore')"><span class="emoji">😬</span><span class="lbl">A bit sore</span></div>
+      <div class="rec-item" id="feel-rest" onclick="selectFeel('rest')"><span class="emoji">🛌</span><span class="lbl">Need rest</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>💧 Hydration & Notes</h2>
+    <label>Water (oz)</label>
+    <input type="number" id="waterOz" placeholder="e.g. 64" min="0"/>
+    <label>Recovery Notes</label>
+    <textarea id="recoveryNotes" placeholder="Soreness location, supplements, how you slept..."></textarea>
+  </div>
+  <div class="card">
+    <h2>⏰ Recovery Reminders</h2>
+    <div style="font-size:0.82rem;color:#d8b4fe;line-height:1.7;">
+      <div>🥩 Hit protein within <strong>30 min</strong> post-workout</div>
+      <div>💧 Drink <strong>64–80 oz</strong> water daily</div>
+      <div>😴 Aim for <strong>7–9 hours</strong> sleep — muscles grow at rest</div>
+      <div>🧘 Rest days are <strong>not optional</strong> — they're when you build</div>
+      <div>💊 Take magnesium glycinate at night for recovery + sleep</div>
+    </div>
+  </div>
+  <button class="save-btn" onclick="saveRecovery()">💾 Save Today's Recovery Log</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // State
+  let meals = [], exercises = [], selectedFeel = '';
+  const todayKey = () => new Date().toISOString().split('T')[0];
+
+  // Date
+  document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+  function switchTab(t) {
+    document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', ['protein','overload','recovery'][i]===t));
+    document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+    document.getElementById('sec-'+t).classList.add('active');
+    if(t==='overload') renderPRHistory();
+  }
+
+  // PROTEIN
+  function updateBar() {
+    const goal = +document.getElementById('proteinGoal').value || 100;
+    const total = meals.reduce((s,m)=>s+m.p,0);
+    const pct = Math.min(100, Math.round(total/goal*100));
+    document.getElementById('proteinBar').style.width = pct+'%';
+    document.getElementById('proteinTotal').textContent = total+'g / '+goal+'g';
+    document.getElementById('proteinPct').textContent = pct+'%';
+  }
+
+  function addMeal() {
+    const name = document.getElementById('mealName').value.trim();
+    const p = +document.getElementById('mealProtein').value;
+    if(!name || !p) return showToast('Enter meal name and protein amount');
+    meals.push({name, p});
+    document.getElementById('mealName').value='';
+    document.getElementById('mealProtein').value='';
+    renderMeals(); updateBar();
+  }
+
+  function renderMeals() {
+    const el = document.getElementById('mealList');
+    el.innerHTML = meals.length ? meals.map((m,i)=>`
+      <div class="log-entry">${m.name} <span>${m.p}g protein</span>
+      <button class="del-btn" onclick="delMeal(${i})">×</button></div>`).join('') : '';
+  }
+
+  function delMeal(i) { meals.splice(i,1); renderMeals(); updateBar(); }
+
+  function saveProtein() {
+    const key = 'protein_'+todayKey();
+    const data = { goal: +document.getElementById('proteinGoal').value, meals, notes: document.getElementById('nutritionNotes').value };
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+    showToast('Protein log saved! 🥩');
+  }
+
+  // OVERLOAD
+  function addExercise() {
+    const name = document.getElementById('exName').value.trim();
+    const sets = +document.getElementById('exSets').value;
+    const reps = +document.getElementById('exReps').value;
+    const weight = +document.getElementById('exWeight').value;
+    if(!name) return showToast('Enter exercise name');
+    exercises.push({name, sets, reps, weight});
+    document.getElementById('exName').value='';
+    document.getElementById('exSets').value='';
+    document.getElementById('exReps').value='';
+    document.getElementById('exWeight').value='';
+    renderExercises();
+  }
+
+  function renderExercises() {
+    const el = document.getElementById('exerciseList');
+    if(!exercises.length){el.innerHTML='';return;}
+    el.innerHTML = `<table class="overload-table"><thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>lbs</th><th></th></tr></thead><tbody>`+
+      exercises.map((e,i)=>`<tr><td>${e.name}</td><td>${e.sets||'—'}</td><td>${e.reps||'—'}</td><td>${e.weight||'BW'}</td>
+      <td><button class="del-btn" onclick="delEx(${i})">×</button></td></tr>`).join('')+
+      `</tbody></table>`;
+  }
+
+  function delEx(i){ exercises.splice(i,1); renderExercises(); }
+
+  function saveOverload() {
+    const key = 'overload_'+todayKey();
+    const allKeys = [];
+    for(let i=0;i<localStorage.length;i++) allKeys.push(localStorage.key(i));
+    // check PRs
+    exercises.forEach(ex => {
+      const prKey = 'pr_'+ex.name.toLowerCase().replace(/\s+/g,'_');
+      let prev = null;
+      try { prev = JSON.parse(localStorage.getItem(prKey)); } catch(e){}
+      if(!prev || ex.weight > prev.weight) {
+        try { localStorage.setItem(prKey, JSON.stringify({weight:ex.weight,reps:ex.reps,date:todayKey()})); } catch(e){}
+      }
+    });
+    try { localStorage.setItem(key, JSON.stringify(exercises)); } catch(e){}
+    showToast('Workout logged! 📈');
+    renderPRHistory();
+  }
+
+  function renderPRHistory() {
+    const el = document.getElementById('prHistory');
+    const prs = [];
+    try {
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        if(k && k.startsWith('pr_')) {
+          const v = JSON.parse(localStorage.getItem(k));
+          prs.push({name: k.replace('pr_','').replace(/_/g,' '), ...v});
+        }
+      }
+    } catch(e){}
+    if(!prs.length){el.innerHTML='<div class="empty">No PRs logged yet. Start logging to track your bests!</div>';return;}
+    el.innerHTML = `<table class="overload-table"><thead><tr><th>Exercise</th><th>Best</th><th>Reps</th><th>Date</th></tr></thead><tbody>`+
+      prs.map(p=>`<tr><td style="text-transform:capitalize">${p.name} <span class="pr-badge">PR</span></td><td>${p.weight} lbs</td><td>${p.reps||'—'}</td><td>${p.date||'—'}</td></tr>`).join('')+
+      `</tbody></table>`;
+  }
+
+  // RECOVERY
+  function updateSleep() {
+    const v = +document.getElementById('sleepHours').value;
+    document.getElementById('sleepVal').textContent = v+'h';
+    const msgs = v<6 ? '⚠️ Too little — recovery suffers' : v<7 ? '😐 Getting there, aim for more' : v<=9 ? 'Good recovery zone 💜' : '😴 Extra rest day energy!';
+    document.getElementById('sleepMsg').textContent = msgs;
+  }
+
+  function selectFeel(f) {
+    selectedFeel = f;
+    ['great','good','sore','rest'].forEach(x => document.getElementById('feel-'+x).classList.toggle('selected', x===f));
+  }
+
+  function saveRecovery() {
+    const key = 'recovery_'+todayKey();
+    const data = { sleep: document.getElementById('sleepHours').value, feel: selectedFeel, water: document.getElementById('waterOz').value, notes: document.getElementById('recoveryNotes').value };
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e){}
+    showToast('Recovery logged! 💜');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2200);
+  }
+
+  // Init
+  updateBar(); updateSleep(); renderPRHistory();
+</script>
+</body>
+</html>
