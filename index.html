@@ -9,8 +9,8 @@
   body { background: #0d0d0d; color: #f0e6ff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding: 16px; }
   h1 { text-align: center; font-size: 1.5rem; color: #c084fc; margin-bottom: 4px; letter-spacing: 1px; }
   .date { text-align: center; font-size: 0.85rem; color: #9ca3af; margin-bottom: 18px; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 18px; justify-content: center; }
-  .tab { flex: 1; max-width: 140px; padding: 8px; border-radius: 10px; border: 1.5px solid #7c3aed; background: transparent; color: #c084fc; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 18px; justify-content: center; flex-wrap: wrap; }
+  .tab { flex: 1; min-width: 70px; max-width: 120px; padding: 8px 4px; border-radius: 10px; border: 1.5px solid #7c3aed; background: transparent; color: #c084fc; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; text-align: center; }
   .tab.active { background: #7c3aed; color: #fff; font-weight: 600; }
   .section { display: none; }
   .section.active { display: block; }
@@ -23,8 +23,6 @@
   .protein-bar-wrap { background: #0d0d1a; border-radius: 20px; height: 14px; margin: 8px 0 4px; overflow: hidden; }
   .protein-bar { height: 100%; border-radius: 20px; background: linear-gradient(90deg, #7c3aed, #c084fc); transition: width 0.4s; }
   .protein-pct { font-size: 0.78rem; color: #9ca3af; text-align: right; }
-  .row { display: flex; gap: 8px; }
-  .row input { flex: 1; }
   .add-btn { background: #7c3aed22; border: 1px solid #7c3aed; color: #c084fc; border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; cursor: pointer; margin-top: 8px; transition: background 0.2s; }
   .add-btn:hover { background: #7c3aed55; }
   .log-entry { background: #0d0d1a; border-radius: 8px; padding: 8px 10px; margin-top: 6px; font-size: 0.82rem; color: #d8b4fe; display: flex; justify-content: space-between; align-items: center; }
@@ -42,15 +40,29 @@
   .sleep-val { color: #c084fc; font-weight: 700; min-width: 36px; font-size: 0.95rem; }
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #7c3aed; color: #fff; padding: 10px 22px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 99; }
   .toast.show { opacity: 1; }
-  .history-entry { background: #0d0d1a; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: 0.82rem; }
-  .history-entry .h-date { color: #c084fc; font-weight: 700; margin-bottom: 4px; }
-  .history-entry .h-row { display: flex; justify-content: space-between; color: #d8b4fe; padding: 2px 0; }
-  .empty { text-align: center; color: #6b7280; font-size: 0.85rem; padding: 20px 0; }
   .overload-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 6px; }
   .overload-table th { color: #c084fc; text-align: left; padding: 4px 6px; border-bottom: 1px solid #7c3aed44; }
   .overload-table td { padding: 5px 6px; border-bottom: 1px solid #7c3aed22; color: #d8b4fe; }
   .overload-table tr:last-child td { border-bottom: none; }
   .pr-badge { background: #7c3aed; color: #fff; font-size: 0.65rem; border-radius: 4px; padding: 1px 5px; margin-left: 4px; vertical-align: middle; }
+  .empty { text-align: center; color: #6b7280; font-size: 0.85rem; padding: 20px 0; }
+
+  /* HISTORY */
+  .hist-day { background: #1a1a2e; border: 1px solid #7c3aed44; border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
+  .hist-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+  .hist-header .h-date { color: #c084fc; font-weight: 700; font-size: 0.9rem; }
+  .hist-header .h-pills { display: flex; gap: 6px; }
+  .h-pill { background: #7c3aed33; border-radius: 20px; padding: 3px 8px; font-size: 0.7rem; color: #d8b4fe; }
+  .hist-body { display: none; padding: 0 16px 14px; border-top: 1px solid #7c3aed22; }
+  .hist-body.open { display: block; }
+  .hist-section { margin-top: 10px; }
+  .hist-section-title { font-size: 0.75rem; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .hist-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: #d8b4fe; padding: 3px 0; border-bottom: 1px solid #7c3aed11; }
+  .hist-row:last-child { border-bottom: none; }
+  .hist-row span { color: #9ca3af; }
+  .chevron { color: #7c3aed; font-size: 0.8rem; transition: transform 0.2s; }
+  .chevron.open { transform: rotate(180deg); }
+  .clear-btn { background: #1a0010; border: 1px solid #ef444455; color: #ef4444; border-radius: 8px; padding: 6px 14px; font-size: 0.78rem; cursor: pointer; margin-bottom: 14px; }
 </style>
 </head>
 <body>
@@ -62,6 +74,7 @@
   <div class="tab active" onclick="switchTab('protein')">🥩 Protein</div>
   <div class="tab" onclick="switchTab('overload')">📈 Overload</div>
   <div class="tab" onclick="switchTab('recovery')">💜 Recovery</div>
+  <div class="tab" onclick="switchTab('history')">📅 History</div>
 </div>
 
 <!-- PROTEIN TAB -->
@@ -100,7 +113,7 @@
     <h2>📈 Log Exercise</h2>
     <label>Exercise</label>
     <input type="text" id="exName" placeholder="e.g. Hip Thrust, Romanian Deadlift..."/>
-    <div class="row" style="margin-top:0;">
+    <div style="display:flex;gap:8px;margin-top:0;">
       <div style="flex:1"><label>Sets</label><input type="number" id="exSets" placeholder="4" min="1"/></div>
       <div style="flex:1"><label>Reps</label><input type="number" id="exReps" placeholder="10" min="1"/></div>
       <div style="flex:1"><label>Weight (lbs)</label><input type="number" id="exWeight" placeholder="95" min="0"/></div>
@@ -154,21 +167,31 @@
   <button class="save-btn" onclick="saveRecovery()">💾 Save Today's Recovery Log</button>
 </div>
 
+<!-- HISTORY TAB -->
+<div class="section" id="sec-history">
+  <div class="card" style="margin-bottom:14px;">
+    <h2>📅 Your Log History</h2>
+    <div style="font-size:0.8rem;color:#9ca3af;">Tap any day to expand details.</div>
+  </div>
+  <div id="historyList"></div>
+  <div class="empty" id="historyEmpty" style="display:none;">No history yet. Start logging to see your progress here!</div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-  // State
   let meals = [], exercises = [], selectedFeel = '';
   const todayKey = () => new Date().toISOString().split('T')[0];
 
-  // Date
   document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 
   function switchTab(t) {
-    document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', ['protein','overload','recovery'][i]===t));
+    const names = ['protein','overload','recovery','history'];
+    document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', names[i]===t));
     document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
     document.getElementById('sec-'+t).classList.add('active');
     if(t==='overload') renderPRHistory();
+    if(t==='history') renderHistory();
   }
 
   // PROTEIN
@@ -203,7 +226,7 @@
   function saveProtein() {
     const key = 'protein_'+todayKey();
     const data = { goal: +document.getElementById('proteinGoal').value, meals, notes: document.getElementById('nutritionNotes').value };
-    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e){}
     showToast('Protein log saved! 🥩');
   }
 
@@ -235,9 +258,6 @@
 
   function saveOverload() {
     const key = 'overload_'+todayKey();
-    const allKeys = [];
-    for(let i=0;i<localStorage.length;i++) allKeys.push(localStorage.key(i));
-    // check PRs
     exercises.forEach(ex => {
       const prKey = 'pr_'+ex.name.toLowerCase().replace(/\s+/g,'_');
       let prev = null;
@@ -263,7 +283,7 @@
         }
       }
     } catch(e){}
-    if(!prs.length){el.innerHTML='<div class="empty">No PRs logged yet. Start logging to track your bests!</div>';return;}
+    if(!prs.length){el.innerHTML='<div class="empty">No PRs yet. Start logging to track your bests!</div>';return;}
     el.innerHTML = `<table class="overload-table"><thead><tr><th>Exercise</th><th>Best</th><th>Reps</th><th>Date</th></tr></thead><tbody>`+
       prs.map(p=>`<tr><td style="text-transform:capitalize">${p.name} <span class="pr-badge">PR</span></td><td>${p.weight} lbs</td><td>${p.reps||'—'}</td><td>${p.date||'—'}</td></tr>`).join('')+
       `</tbody></table>`;
@@ -273,8 +293,8 @@
   function updateSleep() {
     const v = +document.getElementById('sleepHours').value;
     document.getElementById('sleepVal').textContent = v+'h';
-    const msgs = v<6 ? '⚠️ Too little — recovery suffers' : v<7 ? '😐 Getting there, aim for more' : v<=9 ? 'Good recovery zone 💜' : '😴 Extra rest day energy!';
-    document.getElementById('sleepMsg').textContent = msgs;
+    const msg = v<6 ? '⚠️ Too little — recovery suffers' : v<7 ? '😐 Getting there, aim for more' : v<=9 ? 'Good recovery zone 💜' : '😴 Extra rest day energy!';
+    document.getElementById('sleepMsg').textContent = msg;
   }
 
   function selectFeel(f) {
@@ -289,13 +309,95 @@
     showToast('Recovery logged! 💜');
   }
 
+  // HISTORY
+  function renderHistory() {
+    const el = document.getElementById('historyList');
+    const empty = document.getElementById('historyEmpty');
+    const days = {};
+
+    try {
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        if(!k) continue;
+        const match = k.match(/^(protein|overload|recovery)_(\d{4}-\d{2}-\d{2})$/);
+        if(match){
+          const type = match[1], date = match[2];
+          if(!days[date]) days[date]={};
+          try { days[date][type] = JSON.parse(localStorage.getItem(k)); } catch(e){}
+        }
+      }
+    } catch(e){}
+
+    const dates = Object.keys(days).sort((a,b)=>b.localeCompare(a));
+
+    if(!dates.length){ el.innerHTML=''; empty.style.display='block'; return; }
+    empty.style.display='none';
+
+    const feelMap = {great:'🔥 Ready',good:'💪 Good',sore:'😬 Sore',rest:'🛌 Rest',''  :'—'};
+
+    el.innerHTML = dates.map(date => {
+      const d = days[date];
+      const proteinTotal = d.protein ? (d.protein.meals||[]).reduce((s,m)=>s+m.p,0) : null;
+      const proteinGoal = d.protein ? d.protein.goal : null;
+      const sleep = d.recovery ? d.recovery.sleep : null;
+      const feel = d.recovery ? d.recovery.feel : '';
+      const water = d.recovery ? d.recovery.water : null;
+      const exList = d.overload || [];
+
+      const pills = [];
+      if(proteinTotal!==null) pills.push(`🥩 ${proteinTotal}g`);
+      if(sleep) pills.push(`😴 ${sleep}h`);
+      if(feel) pills.push(feelMap[feel]||'');
+
+      const formattedDate = new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+
+      return `<div class="hist-day">
+        <div class="hist-header" onclick="toggleHist('${date}')">
+          <div class="h-date">${formattedDate}</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div class="h-pills">${pills.map(p=>`<span class="h-pill">${p}</span>`).join('')}</div>
+            <div class="chevron" id="chev-${date}">▼</div>
+          </div>
+        </div>
+        <div class="hist-body" id="body-${date}">
+          ${proteinTotal!==null ? `
+          <div class="hist-section">
+            <div class="hist-section-title">🥩 Protein</div>
+            <div class="hist-row"><span>Total</span>${proteinTotal}g / ${proteinGoal}g</div>
+            ${(d.protein.meals||[]).map(m=>`<div class="hist-row"><span>${m.name}</span>${m.p}g</div>`).join('')}
+            ${d.protein.notes ? `<div class="hist-row"><span>Notes</span>${d.protein.notes}</div>` : ''}
+          </div>` : ''}
+          ${exList.length ? `
+          <div class="hist-section">
+            <div class="hist-section-title">📈 Workout</div>
+            ${exList.map(e=>`<div class="hist-row"><span>${e.name}</span>${e.sets||'—'}×${e.reps||'—'} @ ${e.weight||'BW'} lbs</div>`).join('')}
+          </div>` : ''}
+          ${d.recovery ? `
+          <div class="hist-section">
+            <div class="hist-section-title">💜 Recovery</div>
+            ${sleep ? `<div class="hist-row"><span>Sleep</span>${sleep}h</div>` : ''}
+            ${feel ? `<div class="hist-row"><span>Body Feel</span>${feelMap[feel]}</div>` : ''}
+            ${water ? `<div class="hist-row"><span>Water</span>${water} oz</div>` : ''}
+            ${d.recovery.notes ? `<div class="hist-row"><span>Notes</span>${d.recovery.notes}</div>` : ''}
+          </div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function toggleHist(date) {
+    const body = document.getElementById('body-'+date);
+    const chev = document.getElementById('chev-'+date);
+    body.classList.toggle('open');
+    chev.classList.toggle('open');
+  }
+
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('show');
     setTimeout(()=>t.classList.remove('show'),2200);
   }
 
-  // Init
   updateBar(); updateSleep(); renderPRHistory();
 </script>
 </body>
