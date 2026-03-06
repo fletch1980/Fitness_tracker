@@ -46,8 +46,6 @@
   .overload-table tr:last-child td { border-bottom: none; }
   .pr-badge { background: #7c3aed; color: #fff; font-size: 0.65rem; border-radius: 4px; padding: 1px 5px; margin-left: 4px; vertical-align: middle; }
   .empty { text-align: center; color: #6b7280; font-size: 0.85rem; padding: 20px 0; }
-
-  /* HISTORY */
   .hist-day { background: #1a1a2e; border: 1px solid #7c3aed44; border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
   .hist-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
   .hist-header .h-date { color: #c084fc; font-weight: 700; font-size: 0.9rem; }
@@ -62,7 +60,6 @@
   .hist-row span { color: #9ca3af; }
   .chevron { color: #7c3aed; font-size: 0.8rem; transition: transform 0.2s; }
   .chevron.open { transform: rotate(180deg); }
-  .clear-btn { background: #1a0010; border: 1px solid #ef444455; color: #ef4444; border-radius: 8px; padding: 6px 14px; font-size: 0.78rem; cursor: pointer; margin-bottom: 14px; }
 </style>
 </head>
 <body>
@@ -181,8 +178,28 @@
 
 <script>
   let meals = [], exercises = [], selectedFeel = '';
-  const todayKey = () => new Date().toISOString().split('T')[0];
 
+  // ── LOCAL DATE (never UTC) ────────────────────────────────
+  function todayKey() {
+    var n = new Date();
+    var y = n.getFullYear();
+    var mo = n.getMonth() + 1;
+    var d = n.getDate();
+    return y + '-' + (mo < 10 ? '0'+mo : mo) + '-' + (d < 10 ? '0'+d : d);
+  }
+
+  // ── SAFE STORAGE (localStorage with sessionStorage fallback) ──
+  function safeGet(k){try{return localStorage.getItem(k);}catch(e){try{return sessionStorage.getItem(k);}catch(e2){return null;}}}
+  function safeSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){try{sessionStorage.setItem(k,JSON.stringify(v));}catch(e2){}}}
+  function safeGetParsed(k){try{var v=safeGet(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+  function safeKeys(){
+    var keys=[];
+    try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k)keys.push(k);}}
+    catch(e){try{for(var i=0;i<sessionStorage.length;i++){var k=sessionStorage.key(i);if(k)keys.push(k);}}catch(e2){}}
+    return keys;
+  }
+
+  // ── DATE DISPLAY ──────────────────────────────────────────
   document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 
   function switchTab(t) {
@@ -194,7 +211,7 @@
     if(t==='history') renderHistory();
   }
 
-  // PROTEIN
+  // ── PROTEIN ───────────────────────────────────────────────
   function updateBar() {
     const goal = +document.getElementById('proteinGoal').value || 100;
     const total = meals.reduce((s,m)=>s+m.p,0);
@@ -224,13 +241,12 @@
   function delMeal(i) { meals.splice(i,1); renderMeals(); updateBar(); }
 
   function saveProtein() {
-    const key = 'protein_'+todayKey();
     const data = { goal: +document.getElementById('proteinGoal').value, meals, notes: document.getElementById('nutritionNotes').value };
-    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e){}
+    safeSet('protein_'+todayKey(), data);
     showToast('Protein log saved! 🥩');
   }
 
-  // OVERLOAD
+  // ── OVERLOAD ──────────────────────────────────────────────
   function addExercise() {
     const name = document.getElementById('exName').value.trim();
     const sets = +document.getElementById('exSets').value;
@@ -257,16 +273,15 @@
   function delEx(i){ exercises.splice(i,1); renderExercises(); }
 
   function saveOverload() {
-    const key = 'overload_'+todayKey();
+    const tk = todayKey();
     exercises.forEach(ex => {
       const prKey = 'pr_'+ex.name.toLowerCase().replace(/\s+/g,'_');
-      let prev = null;
-      try { prev = JSON.parse(localStorage.getItem(prKey)); } catch(e){}
+      const prev = safeGetParsed(prKey);
       if(!prev || ex.weight > prev.weight) {
-        try { localStorage.setItem(prKey, JSON.stringify({weight:ex.weight,reps:ex.reps,date:todayKey()})); } catch(e){}
+        safeSet(prKey, {weight:ex.weight, reps:ex.reps, date:tk});
       }
     });
-    try { localStorage.setItem(key, JSON.stringify(exercises)); } catch(e){}
+    safeSet('overload_'+tk, exercises);
     showToast('Workout logged! 📈');
     renderPRHistory();
   }
@@ -274,22 +289,19 @@
   function renderPRHistory() {
     const el = document.getElementById('prHistory');
     const prs = [];
-    try {
-      for(let i=0;i<localStorage.length;i++){
-        const k = localStorage.key(i);
-        if(k && k.startsWith('pr_')) {
-          const v = JSON.parse(localStorage.getItem(k));
-          prs.push({name: k.replace('pr_','').replace(/_/g,' '), ...v});
-        }
+    safeKeys().forEach(k => {
+      if(k && k.startsWith('pr_')) {
+        const v = safeGetParsed(k);
+        if(v) prs.push({name: k.replace('pr_','').replace(/_/g,' '), ...v});
       }
-    } catch(e){}
+    });
     if(!prs.length){el.innerHTML='<div class="empty">No PRs yet. Start logging to track your bests!</div>';return;}
     el.innerHTML = `<table class="overload-table"><thead><tr><th>Exercise</th><th>Best</th><th>Reps</th><th>Date</th></tr></thead><tbody>`+
       prs.map(p=>`<tr><td style="text-transform:capitalize">${p.name} <span class="pr-badge">PR</span></td><td>${p.weight} lbs</td><td>${p.reps||'—'}</td><td>${p.date||'—'}</td></tr>`).join('')+
       `</tbody></table>`;
   }
 
-  // RECOVERY
+  // ── RECOVERY ──────────────────────────────────────────────
   function updateSleep() {
     const v = +document.getElementById('sleepHours').value;
     document.getElementById('sleepVal').textContent = v+'h';
@@ -303,33 +315,29 @@
   }
 
   function saveRecovery() {
-    const key = 'recovery_'+todayKey();
     const data = { sleep: document.getElementById('sleepHours').value, feel: selectedFeel, water: document.getElementById('waterOz').value, notes: document.getElementById('recoveryNotes').value };
-    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e){}
+    safeSet('recovery_'+todayKey(), data);
     showToast('Recovery logged! 💜');
   }
 
-  // HISTORY
+  // ── HISTORY ───────────────────────────────────────────────
   function renderHistory() {
     const el = document.getElementById('historyList');
     const empty = document.getElementById('historyEmpty');
     const days = {};
 
-    try {
-      for(let i=0;i<localStorage.length;i++){
-        const k = localStorage.key(i);
-        if(!k) continue;
-        const match = k.match(/^(protein|overload|recovery)_(\d{4}-\d{2}-\d{2})$/);
-        if(match){
-          const type = match[1], date = match[2];
-          if(!days[date]) days[date]={};
-          try { days[date][type] = JSON.parse(localStorage.getItem(k)); } catch(e){}
-        }
+    safeKeys().forEach(k => {
+      if(!k) return;
+      const match = k.match(/^(protein|overload|recovery)_(\d{4}-\d{2}-\d{2})$/);
+      if(match){
+        const type = match[1], date = match[2];
+        if(!days[date]) days[date]={};
+        const v = safeGetParsed(k);
+        if(v) days[date][type] = v;
       }
-    } catch(e){}
+    });
 
     const dates = Object.keys(days).sort((a,b)=>b.localeCompare(a));
-
     if(!dates.length){ el.innerHTML=''; empty.style.display='block'; return; }
     empty.style.display='none';
 
@@ -362,19 +370,28 @@
         <div class="hist-body" id="body-${date}">
           ${proteinTotal!==null ? `
           <div class="hist-section">
-            <div class="hist-section-title">🥩 Protein</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <div class="hist-section-title" style="margin-bottom:0;">🥩 Protein</div>
+              <button class="del-btn" style="font-size:0.72rem;color:#ef4444;border:1px solid #ef444455;border-radius:6px;padding:2px 8px;background:#1a0010;" onclick="deleteSection('protein','${date}')">🗑 Delete</button>
+            </div>
             <div class="hist-row"><span>Total</span>${proteinTotal}g / ${proteinGoal}g</div>
             ${(d.protein.meals||[]).map(m=>`<div class="hist-row"><span>${m.name}</span>${m.p}g</div>`).join('')}
             ${d.protein.notes ? `<div class="hist-row"><span>Notes</span>${d.protein.notes}</div>` : ''}
           </div>` : ''}
           ${exList.length ? `
           <div class="hist-section">
-            <div class="hist-section-title">📈 Workout</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <div class="hist-section-title" style="margin-bottom:0;">📈 Workout</div>
+              <button class="del-btn" style="font-size:0.72rem;color:#ef4444;border:1px solid #ef444455;border-radius:6px;padding:2px 8px;background:#1a0010;" onclick="deleteSection('overload','${date}')">🗑 Delete</button>
+            </div>
             ${exList.map(e=>`<div class="hist-row"><span>${e.name}</span>${e.sets||'—'}×${e.reps||'—'} @ ${e.weight||'BW'} lbs</div>`).join('')}
           </div>` : ''}
           ${d.recovery ? `
           <div class="hist-section">
-            <div class="hist-section-title">💜 Recovery</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <div class="hist-section-title" style="margin-bottom:0;">💜 Recovery</div>
+              <button class="del-btn" style="font-size:0.72rem;color:#ef4444;border:1px solid #ef444455;border-radius:6px;padding:2px 8px;background:#1a0010;" onclick="deleteSection('recovery','${date}')">🗑 Delete</button>
+            </div>
             ${sleep ? `<div class="hist-row"><span>Sleep</span>${sleep}h</div>` : ''}
             ${feel ? `<div class="hist-row"><span>Body Feel</span>${feelMap[feel]}</div>` : ''}
             ${water ? `<div class="hist-row"><span>Water</span>${water} oz</div>` : ''}
@@ -383,6 +400,13 @@
         </div>
       </div>`;
     }).join('');
+  }
+
+  function deleteSection(type, date) {
+    try { localStorage.removeItem(type+'_'+date); } catch(e) {}
+    try { sessionStorage.removeItem(type+'_'+date); } catch(e) {}
+    showToast('Deleted! 🗑');
+    renderHistory();
   }
 
   function toggleHist(date) {
