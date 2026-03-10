@@ -7,6 +7,8 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #0d0d0d; color: #f0e6ff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding: 16px; }
+  .back-btn{display:inline-flex;align-items:center;gap:6px;background:#1a0030;border:1px solid #3b0764;border-radius:8px;color:#c084fc;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;text-decoration:none;margin-bottom:12px;}
+  .back-btn:active{opacity:0.8;}
   h1 { text-align: center; font-size: 1.5rem; color: #c084fc; margin-bottom: 4px; letter-spacing: 1px; }
   .date { text-align: center; font-size: 0.85rem; color: #9ca3af; margin-bottom: 18px; }
   .tabs { display: flex; gap: 6px; margin-bottom: 18px; justify-content: center; flex-wrap: wrap; }
@@ -63,6 +65,8 @@
 </style>
 </head>
 <body>
+
+<a href="https://fletch1980.github.io/Complete_goddess/" class="back-btn">👑 Home</a>
 
 <h1>👑 Fitness Tracker</h1>
 <div class="date" id="dateDisplay"></div>
@@ -179,7 +183,6 @@
 <script>
   let meals = [], exercises = [], selectedFeel = '';
 
-  // ── LOCAL DATE (never UTC) ────────────────────────────────
   function todayKey() {
     var n = new Date();
     var y = n.getFullYear();
@@ -188,7 +191,6 @@
     return y + '-' + (mo < 10 ? '0'+mo : mo) + '-' + (d < 10 ? '0'+d : d);
   }
 
-  // ── SAFE STORAGE (localStorage with sessionStorage fallback) ──
   function safeGet(k){try{return localStorage.getItem(k);}catch(e){try{return sessionStorage.getItem(k);}catch(e2){return null;}}}
   function safeSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){try{sessionStorage.setItem(k,JSON.stringify(v));}catch(e2){}}}
   function safeGetParsed(k){try{var v=safeGet(k);return v?JSON.parse(v):null;}catch(e){return null;}}
@@ -199,7 +201,6 @@
     return keys;
   }
 
-  // ── DATE DISPLAY ──────────────────────────────────────────
   document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 
   function switchTab(t) {
@@ -211,7 +212,6 @@
     if(t==='history') renderHistory();
   }
 
-  // ── PROTEIN ───────────────────────────────────────────────
   function updateBar() {
     const goal = +document.getElementById('proteinGoal').value || 100;
     const total = meals.reduce((s,m)=>s+m.p,0);
@@ -246,7 +246,6 @@
     showToast('Protein log saved! 🥩');
   }
 
-  // ── OVERLOAD ──────────────────────────────────────────────
   function addExercise() {
     const name = document.getElementById('exName').value.trim();
     const sets = +document.getElementById('exSets').value;
@@ -301,7 +300,6 @@
       `</tbody></table>`;
   }
 
-  // ── RECOVERY ──────────────────────────────────────────────
   function updateSleep() {
     const v = +document.getElementById('sleepHours').value;
     document.getElementById('sleepVal').textContent = v+'h';
@@ -320,7 +318,6 @@
     showToast('Recovery logged! 💜');
   }
 
-  // ── HISTORY ───────────────────────────────────────────────
   function renderHistory() {
     const el = document.getElementById('historyList');
     const empty = document.getElementById('historyEmpty');
